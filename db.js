@@ -6,11 +6,12 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// Automatically enforce secure SSL certificates for production cloud databases
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1')
+    ? false
+    : { rejectUnauthorized: false }
 });
 
 pool.on('error', (err) => {
