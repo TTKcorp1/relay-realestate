@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relay: AI real-estate sales agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span>Relay</div>
+    <div class="biz">Real-estate agency demo, fictional listings and leads</div>
+  </header>
+
+  <section aria-labelledby="h-build">
+    <h1 class="lede" id="h-build">Say what you want. Relay builds the workflow.</h1>
+    <p class="goal">Write it the way you would tell an assistant. Change the words, build again, and the agent behaves differently.</p>
+
+    <div class="presets" aria-label="Example requests">
+      <button type="button" class="chip-btn" data-preset="full">Full agent</button>
+      <button type="button" class="chip-btn" data-preset="nofollow">Without follow-ups</button>
+      <button type="button" class="chip-btn" data-preset="qualify">Only qualify leads</button>
+      <button type="button" class="chip-btn" data-preset="props">Properties, no booking</button>
+      <button type="button" class="chip-btn" data-preset="book">Booking, no properties</button>
+      <button type="button" class="chip-btn" data-preset="follow">Follow-ups only</button>
+    </div>
+    <label class="sr" for="request">What should the AI do?</label>
+    <textarea id="request" rows="3"></textarea>
+    <div class="actions">
+      <button class="btn primary" id="build" type="button">Build workflow</button>
+      <span id="err" class="err" role="alert"></span>
+    </div>
+
+    <div class="sec-h"><h2>Your workflow</h2><small id="wfsum"></small></div>
+    <ol class="wf" id="wf"></ol>
+  </section>
+
+  <section aria-labelledby="h-try" class="try">
+    <h2 class="lede2" id="h-try">Now try it as the lead</h2>
+    <p class="goal">You play the person who messages the agency. Use the sample messages or write your own.</p>
+
+    <div class="sim">
+      <div class="chatbox">
+        <div class="chathead">
+          <div><b id="leadName"></b><br><small id="leadMeta"></small></div>
+          <div class="ctl">
+            <button class="btn" id="skip" type="button" title="Move the clock forward to see follow-ups happen">Skip 25 hours</button>
+            <button class="btn" id="newLead" type="button">New lead</button>
+          </div>
+        </div>
+        <div class="chat" id="chat" role="log" aria-live="polite" aria-label="Conversation"></div>
+        <div class="samples" id="samples"></div>
+        <form class="composer" id="composer" autocomplete="off">
+          <label class="sr" for="msg">Message as the lead</label>
+          <input id="msg" type="text" placeholder="Type the lead's message">
+          <button class="btn primary" type="submit">Send</button>
+        </form>
+      </div>
+
+      <aside class="inspect" aria-label="What the agent knows">
+        <div class="statusline" id="status"></div>
+
+        <h3>What the agent has learned</h3>
+        <div class="rows" id="profile"></div>
+
+        <h3>Properties chosen</h3>
+        <div id="matches" class="plain"></div>
+
+        <h3>Sent to the human agent</h3>
+        <div id="notes" class="plain"></div>
+
+        <h3>Your CRM</h3>
+        <div id="crm" class="plain"></div>
+
+        <details class="log"><summary>Step-by-step log</summary><ol id="log"></ol></details>
+      </aside>
+    </div>
+  </section>
+
+  <p class="foot">This page runs entirely in your browser. A simple rule-based stand-in plays the AI, and nothing is sent to anyone. The house pictures are drawn illustrations; the real product shows the agency's own listing photos. The real version swaps in Claude on a small server.</p>
+</div>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

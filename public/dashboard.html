@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay · AI Sales Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0F1A;--panel:#12182A;--panel2:#182038;--line:#24304A;--text:#E8ECF8;--muted:#8B95B2;--signal:#F5B94A;--link:#8C9BFF;--ok:#5FD3A0;--warn:#F07178;--bubble:rgba(140,155,255,.12);--display:'Bricolage Grotesque',system-ui,sans-serif;--body:'IBM Plex Sans',system-ui,sans-serif}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14.5px;line-height:1.5;height:100%}
+button,input,textarea{font:inherit;color:inherit}a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.nav{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:18px;padding:4px 10px 22px}
+.mark{width:22px;height:22px;border-radius:50%;border:2px solid var(--link);position:relative}
+.mark::after{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--signal)}
+.nav a{display:flex;padding:9px 12px;border-radius:8px;color:var(--muted);font-size:14px;cursor:pointer}
+.nav a:hover{background:var(--panel2);color:var(--text);text-decoration:none}
+.nav a.active{background:var(--bubble);color:var(--text)}
+.nav .spacer{flex:1}.nav .foot{padding:12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);margin-top:12px}
+.main{padding:22px 28px 40px;max-width:1200px;position:relative}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.topbar h1{margin:0;font-family:var(--display);font-size:22px;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;background:var(--panel)}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(95,211,160,.2)}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 14px;font-weight:500;font-size:13.5px;cursor:pointer}
+.btn:hover{border-color:var(--link)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--link);border-color:var(--link);color:#0B0F1A;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.metric .label{color:var(--muted);font-size:12.5px;margin-bottom:6px}
+.metric .val{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.02em}
+.metric .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.card-h h2{margin:0;font-family:var(--display);font-size:15px;font-weight:600}
+.card-h small{color:var(--muted);font-size:12.5px}
+.card-b{padding:8px 0;max-height:420px;overflow-y:auto}
+.row{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);align-items:flex-start;cursor:pointer;transition:background .12s}
+.row:hover{background:var(--panel2)}.row:last-child{border-bottom:none}
+.row .icon{width:28px;height:28px;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;flex:none;font-size:13px}
+.row .body{flex:1;min-width:0}.row .title{font-weight:500;font-size:13.5px}.row .meta{color:var(--muted);font-size:12px;margin-top:2px}
+.row .time{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.attn .row{background:rgba(240,113,120,.04)}.attn .icon{background:rgba(240,113,120,.12);color:var(--warn)}
+.empty{color:var(--muted);padding:28px 16px;text-align:center;font-size:13.5px}
+.panel{display:none}.panel.on{display:block}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin-bottom:14px}.field label{display:block;color:var(--muted);font-size:12.5px;margin-bottom:5px}
+.field .box{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;font-size:14px}
+.field .box.goal{line-height:1.55;min-height:72px}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tool{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;background:var(--panel2)}
+.tool.on{border-color:rgba(95,211,160,.45);color:var(--ok)}.tool.off{opacity:.55}
+.leads-table{width:100%;border-collapse:collapse}
+.leads-table th,.leads-table td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13.5px}
+.leads-table th{color:var(--muted);font-weight:500;font-size:12px}
+.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;border:1px solid var(--line);color:var(--muted)}
+.tag.viewing_booked{color:var(--ok);border-color:var(--ok)}.tag.qualified{color:var(--link);border-color:var(--link)}.tag.nurture{color:var(--signal);border-color:var(--signal)}
+.err-banner{display:none;background:rgba(240,113,120,.12);border:1px solid rgba(240,113,120,.35);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13.5px}
+.err-banner.on{display:block}
+.ok-banner{display:none;background:rgba(95,211,160,.1);border:1px solid rgba(95,211,160,.3);color:var(--ok);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13.5px}
+.ok-banner.on{display:block}
+.wa-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.wa-box h3{margin:0 0 8px;font-family:var(--display);font-size:15px}
+.wa-box code{background:var(--panel2);padding:2px 6px;border-radius:4px;font-size:12.5px}
+.wa-box ol{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+.wa-box li{margin:4px 0}
+.drawer-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40}
+.drawer-bg.on{display:block}
+.drawer{position:fixed;top:0;right:0;width:min(420px,100%);height:100%;background:var(--panel);border-left:1px solid var(--line);z-index:50;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s ease}
+.drawer.on{transform:translateX(0)}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+.drawer-h h2{margin:0;font-family:var(--display);font-size:16px}
+.drawer-meta{padding:10px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:88%;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.bubble.in{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.bubble.out{align-self:flex-end;background:var(--bubble);border:1px solid rgba(140,155,255,.25)}
+.bubble .who{font-size:11px;color:var(--muted);margin-bottom:3px}
+.composer{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line)}
+.composer input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:10px 14px;outline:none}
+.composer input:focus{border-color:var(--link)}
+.composer button{border-radius:999px;padding:10px 16px}
+@media (max-width:960px){.shell{grid-template-columns:1fr}.nav{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--line)}.nav .spacer,.nav .foot{display:none}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.agent-grid{grid-template-columns:1fr}.main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="nav">
+    <div class="brand"><span class="mark"></span>Relay</div>
+    <a class="active" data-view="dash">Dashboard</a>
+    <a data-view="agent">AI Sales Agent</a>
+    <a data-view="leads">Leads</a>
+    <a href="/demo" target="_blank" rel="noopener">Simulator ↗</a>
+    <div class="spacer"></div>
+    <div class="foot">AI employee for inbound leads</div>
+  </nav>
+  <main class="main">
+    <div class="err-banner" id="err"></div>
+    <div class="ok-banner" id="ok"></div>
+    <div class="panel on" id="view-dash">
+      <div class="topbar">
+        <h1>AI Sales Agent</h1>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="badge"><span class="dot"></span> Active</span>
+          <button class="btn primary" type="button" id="btn-test-lead">+ New test lead</button>
+          <button class="btn" type="button" id="refresh">Refresh</button>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="label">Leads processed</div><div class="val" id="m-leads">—</div><div class="sub" id="m-leads-sub"></div></div>
+        <div class="metric"><div class="label">Qualified</div><div class="val" id="m-qualified">—</div><div class="sub">ready for sales</div></div>
+        <div class="metric"><div class="label">Appointments booked</div><div class="val" id="m-booked">—</div><div class="sub" id="m-booked-sub"></div></div>
+        <div class="metric"><div class="label">Waiting for reply</div><div class="val" id="m-waiting">—</div><div class="sub">open conversations</div></div>
+      </div>
+      <div class="grid">
+        <section class="card">
+          <div class="card-h"><h2>AI activity</h2><small id="activity-count"></small></div>
+          <div class="card-b" id="activity"><div class="empty">Loading…</div></div>
+        </section>
+        <section class="card attn">
+          <div class="card-h"><h2>Needs your attention</h2><small id="attn-count"></small></div>
+          <div class="card-b" id="attention"><div class="empty">Loading…</div></div>
+        </section>
+      </div>
+    </div>
+    <div class="panel" id="view-agent">
+      <div class="topbar"><h1>AI Sales Agent</h1><span class="badge"><span class="dot"></span> Active</span></div>
+      <div id="wa-setup" class="wa-box" style="display:none">
+        <h3>Connect WhatsApp (live inbound)</h3>
+        <p style="margin:0;color:var(--muted);font-size:13.5px">Webhook is ready. Add these to your <code>.env</code> and restart the server:</p>
+        <ol>
+          <li><code>WHATSAPP_TOKEN</code> — permanent access token from Meta</li>
+          <li><code>WHATSAPP_PHONE_NUMBER_ID</code> — phone number ID</li>
+          <li><code>WHATSAPP_VERIFY_TOKEN</code> — any secret string you choose</li>
+        </ol>
+        <p style="margin:10px 0 0;font-size:13px">Callback URL for Meta: <code id="wa-url">—</code></p>
+        <p style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">For local testing use a tunnel (ngrok / cloudflared) pointing to that path.</p>
+      </div>
+      <div class="agent-grid">
+        <section class="card">
+          <div class="card-h"><h2>Configuration</h2></div>
+          <div class="card-b" style="padding:16px">
+            <div class="field"><label>Goal</label><div class="box goal" id="agent-goal">—</div></div>
+            <div class="field"><label>Workflow ID</label><div class="box" id="agent-wf">—</div></div>
+            <div class="field"><label>Live in memory</label><div class="box" id="agent-live">—</div></div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-h"><h2>Connected tools</h2></div>
+          <div class="card-b" style="padding:16px">
+            <div class="tools" id="agent-tools"></div>
+            <p style="color:var(--muted);font-size:13px;margin:16px 0 0">WhatsApp is the live inbound channel. Calendar and CRM run in-process today.</p>
+            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn primary" type="button" id="btn-test-lead-2">+ New test lead</button>
+              <a class="btn" href="/demo" target="_blank">Open workflow simulator</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="panel" id="view-leads">
+      <div class="topbar">
+        <h1>Leads</h1>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" type="button" id="btn-test-lead-3">+ New test lead</button>
+          <button class="btn" type="button" id="refresh-leads">Refresh</button>
+        </div>
+      </div>
+      <section class="card"><div class="card-b" style="padding:0;max-height:none">
+        <table class="leads-table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th>Updated</th></tr></thead>
+          <tbody id="leads-body"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div></section>
+    </div>
+  </main>
+</div>
+<div class="drawer-bg" id="drawer-bg"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-h">
+    <div><h2 id="chat-title">Conversation</h2></div>
+    <button class="btn" type="button" id="chat-close">Close</button>
+  </div>
+  <div class="drawer-meta" id="chat-meta"></div>
+  <div class="chat" id="chat-msgs"></div>
+  <div class="composer">
+    <input id="chat-input" type="text" placeholder="Reply as the lead…" autocomplete="off">
+    <button class="btn primary" type="button" id="chat-send">Send</button>
+  </div>
+</aside>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let openRunId=null;
+  function showErr(m){const el=$('#err');if(!m){el.classList.remove('on');el.textContent='';return;}el.textContent=m;el.classList.add('on');}
+  function showOk(m){const el=$('#ok');if(!m){el.classList.remove('on');el.textContent='';return;}el.textContent=m;el.classList.add('on');setTimeout(()=>showOk(''),4000);}
+  function relTime(iso){if(!iso)return'';const s=Math.round((Date.now()-new Date(iso).getTime())/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+  async function api(path,opts){
+    const res=await fetch(path,opts);
+    const text=await res.text();
+    let data=null;try{data=JSON.parse(text);}catch(e){}
+    if(!res.ok)throw new Error((data&&data.error)||(res.status+' '+text.slice(0,120)));
+    return data;
+  }
+  function setView(name){
+    ['dash','agent','leads'].forEach(v=>$('#view-'+v).classList.toggle('on',v===name));
+    document.querySelectorAll('.nav a[data-view]').forEach(a=>a.classList.toggle('active',a.dataset.view===name));
+    if(name==='agent')loadAgent();
+    if(name==='leads')loadLeads();
+  }
+  document.querySelectorAll('.nav a[data-view]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();setView(a.dataset.view);}));
+  async function loadDash(){
+    showErr('');
+    try{
+      const [stats,activity,attention]=await Promise.all([api('/api/stats'),api('/api/activity?limit=25'),api('/api/attention')]);
+      $('#m-leads').textContent=stats.leads_total.toLocaleString();
+      $('#m-leads-sub').textContent=(stats.leads_nurture?stats.leads_nurture+' nurture · ':'')+(stats.leads_new?stats.leads_new+' new':'')+(stats.leads_viewing_booked?' · '+stats.leads_viewing_booked+' booked':'');
+      $('#m-qualified').textContent=stats.leads_qualified.toLocaleString();
+      $('#m-booked').textContent=(stats.appointments_booked||stats.leads_viewing_booked||0).toLocaleString();
+      $('#m-booked-sub').textContent=stats.leads_viewing_booked?stats.leads_viewing_booked+' viewing_booked':'from run context';
+      $('#m-waiting').textContent=stats.runs_waiting.toLocaleString();
+      const acts=activity.activity||[];
+      $('#activity-count').textContent=acts.length?acts.length+' recent':'';
+      $('#activity').innerHTML=acts.length?acts.map(a=>{
+        const icon=a.status==='done'?'✓':a.status==='waiting'?'…':'●';
+        return `<div class="row" data-run="${esc(a.run_id)}"><div class="icon">${icon}</div><div class="body"><div class="title">${esc(a.lead_name)}</div><div class="meta">${esc(a.summary)}</div></div><div class="time">${esc(relTime(a.updated_at))}</div></div>`;
+      }).join(''):'<div class="empty">No activity yet. Click “New test lead”.</div>';
+      const items=attention.items||[];
+      $('#attn-count').textContent=attention.waiting_count?attention.waiting_count+' waiting':'';
+      $('#attention').innerHTML=items.length?items.map(i=>
+        `<div class="row" data-run="${esc(i.run_id)}"><div class="icon">!</div><div class="body"><div class="title">${esc(i.lead_name)}</div><div class="meta">${esc(i.message)}</div></div></div>`
+      ).join(''):'<div class="empty">All clear. Nothing needs approval right now.</div>';
+      document.querySelectorAll('#activity .row[data-run], #attention .row[data-run]').forEach(el=>{
+        el.addEventListener('click',()=>openChat(el.dataset.run));
+      });
+    }catch(e){
+      showErr('Could not load dashboard: '+e.message);
+      $('#activity').innerHTML='<div class="empty">Failed</div>';
+      $('#attention').innerHTML='<div class="empty">Failed</div>';
+    }
+  }
+  async function loadAgent(){
+    try{
+      const agent=await api('/api/agent');
+      $('#agent-goal').textContent=agent.goal||'—';
+      $('#agent-wf').textContent=agent.workflow_id||'—';
+      $('#agent-live').textContent=(agent.live?.runs_in_memory??0)+' runs · '+(agent.live?.waiting??0)+' waiting';
+      const labels={whatsapp:'WhatsApp',llm:'Claude (LLM)',database:'Postgres',calendar:'Calendar',crm:'CRM',gmail:'Gmail',instagram:'Instagram'};
+      const c=agent.connected||{};
+      $('#agent-tools').innerHTML=Object.keys(labels).map(k=>{
+        const on=!!c[k];
+        return `<span class="tool ${on?'on':'off'}"><span>${on?'✓':'○'}</span> ${labels[k]}</span>`;
+      }).join('');
+      const wa=$('#wa-setup');
+      if(agent.whatsapp_setup && !agent.whatsapp_setup.configured){
+        wa.style.display='block';
+        $('#wa-url').textContent=agent.whatsapp_setup.webhook_url||'—';
+      }else{wa.style.display='none';}
+    }catch(e){showErr('Could not load agent: '+e.message);}
+  }
+  async function loadLeads(){
+    try{
+      const data=await api('/api/leads?limit=100');
+      const leads=data.leads||[];
+      $('#leads-body').innerHTML=leads.length?leads.map(l=>
+        `<tr><td>${esc(l.name||'—')}</td><td>${esc(l.phone||'—')}</td><td><span class="tag ${esc(l.status||'')}">${esc(l.status||'new')}</span></td><td style="color:var(--muted)">${esc(relTime(l.updated_at))}</td></tr>`
+      ).join(''):'<tr><td colspan="4" class="empty">No leads yet</td></tr>';
+    }catch(e){showErr('Could not load leads: '+e.message);}
+  }
+  async function openChat(runId){
+    if(!runId)return;
+    openRunId=runId;
+    $('#drawer-bg').classList.add('on');
+    $('#drawer').classList.add('on');
+    $('#chat-msgs').innerHTML='<div class="empty">Loading…</div>';
+    $('#chat-title').textContent='Conversation';
+    $('#chat-meta').textContent='';
+    try{
+      const data=await api('/api/conversations/'+encodeURIComponent(runId));
+      const lead=data.lead||{};
+      const run=data.run||{};
+      $('#chat-title').textContent=lead.name||lead.phone||runId;
+      $('#chat-meta').innerHTML=
+        `<span>Status: <strong>${esc(run.status||'—')}</strong></span>`+
+        `<span>Step: <strong>${esc(run.nodeId||'—')}</strong></span>`+
+        (lead.status?`<span class="tag ${esc(lead.status)}">${esc(lead.status)}</span>`:'')+
+        (run.ctx&&run.ctx.booking?`<span>Booked: ${esc(run.ctx.booking.slot&&run.ctx.booking.slot.label)}</span>`:'');
+      renderMessages(data.messages||[]);
+      $('#chat-input').focus();
+    }catch(e){$('#chat-msgs').innerHTML='<div class="empty">'+esc(e.message)+'</div>';}
+  }
+  function renderMessages(msgs){
+    if(!msgs.length){$('#chat-msgs').innerHTML='<div class="empty">No messages yet</div>';return;}
+    $('#chat-msgs').innerHTML=msgs.map(m=>{
+      const dir=m.dir==='out'?'out':'in';
+      const who=dir==='out'?'AI agent':'Lead';
+      return `<div class="bubble ${dir}"><div class="who">${who}</div>${esc(m.text||'')}</div>`;
+    }).join('');
+    const box=$('#chat-msgs');box.scrollTop=box.scrollHeight;
+  }
+  function closeChat(){openRunId=null;$('#drawer').classList.remove('on');$('#drawer-bg').classList.remove('on');}
+  async function sendChat(){
+    const input=$('#chat-input');
+    const text=(input.value||'').trim();
+    if(!text||!openRunId)return;
+    input.disabled=true;$('#chat-send').disabled=true;
+    try{
+      const data=await api('/api/runs/'+encodeURIComponent(openRunId)+'/reply',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})
+      });
+      input.value='';
+      renderMessages((data.lead&&data.lead.messages)||[]);
+      const run=data.run||{};
+      $('#chat-meta').innerHTML=
+        `<span>Status: <strong>${esc(run.status||'—')}</strong></span>`+
+        `<span>Step: <strong>${esc(run.nodeId||'—')}</strong></span>`+
+        (run.ctx&&run.ctx.booking?`<span>Booked: ${esc(run.ctx.booking.slot&&run.ctx.booking.slot.label)}</span>`:'');
+      loadDash();
+      if(run.status==='done')showOk('Conversation finished'+(run.ctx&&run.ctx.booking?' — viewing booked':'')+'.');
+    }catch(e){showErr('Reply failed: '+e.message);}
+    finally{input.disabled=false;$('#chat-send').disabled=false;input.focus();}
+  }
+  async function createTestLead(){
+    showErr('');
+    const buttons=[...document.querySelectorAll('#btn-test-lead,#btn-test-lead-2,#btn-test-lead-3')];
+    buttons.forEach(b=>b.disabled=true);
+    try{
+      const data=await api('/api/test-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      showOk('Test lead created: '+(data.lead&&data.lead.name)+' — agent is waiting for a reply.');
+      await loadDash();
+      if(data.run&&data.run.id)openChat(data.run.id);
+    }catch(e){showErr('Could not create test lead: '+e.message);}
+    finally{buttons.forEach(b=>b.disabled=false);}
+  }
+  $('#refresh').addEventListener('click',loadDash);
+  $('#refresh-leads').addEventListener('click',loadLeads);
+  $('#btn-test-lead').addEventListener('click',createTestLead);
+  $('#btn-test-lead-2').addEventListener('click',createTestLead);
+  $('#btn-test-lead-3').addEventListener('click',createTestLead);
+  $('#chat-close').addEventListener('click',closeChat);
+  $('#drawer-bg').addEventListener('click',closeChat);
+  $('#chat-send').addEventListener('click',sendChat);
+  $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+  loadDash();setInterval(loadDash,30000);
+})();
+</script>
+</body>
+</html>
