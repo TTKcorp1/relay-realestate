@@ -37,7 +37,13 @@ async function query(text, params = []) {
 }
 
 async function initDb() {
-  await query(`
+  // Several serverless instances can cold-start at once and all run CREATE TABLE IF NOT EXISTS.
+  // A transaction-level advisory lock makes them take turns (works with Neon's pooled connections).
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(727001)');
+    await client.query(`
     CREATE TABLE IF NOT EXISTS leads (
       id TEXT PRIMARY KEY,
       name TEXT,
@@ -66,7 +72,14 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_runs_lead_id ON runs(lead_id);
     CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
   `);
-  console.log('Database initialized');
+    await client.query('COMMIT');
+    console.log('Database initialized');
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (e) {}
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function upsertLead(lead) {
