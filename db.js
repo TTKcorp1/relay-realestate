@@ -1,19 +1,31 @@
 const { Pool } = require('pg');
 
-if (!process.env.DATABASE_URL) {
-  console.error('\nCRITICAL ERROR: DATABASE_URL is not defined in your environment variables!');
-  console.error('Make sure your .env file exists in the root folder and is filled out.\n');
+// On Vercel the Neon integration stores the connection string as DATABASE_URL_DATABASE_URL
+// (because a prefix was set). Locally we keep using the normal DATABASE_URL from .env.
+const DB_URL =
+  process.env.DATABASE_URL_DATABASE_URL ||
+  process.env.DATABASE_URL_POSTGRES_URL ||
+  process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error('\nCRITICAL ERROR: no database URL is defined in the environment variables!');
+  console.error('Set DATABASE_URL (local .env) or connect the Neon integration on Vercel.\n');
   process.exit(1);
 }
 
-try { console.log('DB host:', new URL(process.env.DATABASE_URL).hostname); } catch (e) { console.log('DATABASE_URL is not a valid URL'); }
+try {
+  console.log('DB host:', new URL(DB_URL).hostname);
+} catch (e) {
+  console.log('Database URL is not a valid URL');
+}
 
-// Automatically enforce secure SSL certificates for production cloud databases
+const isLocal = DB_URL.includes('localhost') || DB_URL.includes('127.0.0.1');
+
+// Automatically enforce secure SSL for production cloud databases
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1')
-    ? false
-    : { rejectUnauthorized: false }
+  connectionString: DB_URL,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
+  max: process.env.VERCEL ? 1 : 10, // serverless: keep connections minimal
 });
 
 pool.on('error', (err) => {
