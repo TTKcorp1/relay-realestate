@@ -6,6 +6,8 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+try { console.log('DB host:', new URL(process.env.DATABASE_URL).hostname); } catch (e) { console.log('DATABASE_URL is not a valid URL'); }
+
 // Automatically enforce secure SSL certificates for production cloud databases
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
